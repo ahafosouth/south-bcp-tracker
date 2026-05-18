@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AHAFO SOUTH BCP SAMPLE TRACKER</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0e14;
+    --bg-panel: #0f1520;
+    --bg-card: #131c2b;
+    --bg-card2: #162035;
+    --border: #1e3050;
+    --border-bright: #2a4a7a;
+    --gold: #e8b84b;
+    --gold-dim: #a07c28;
+    --amber: #f59e0b;
+    --orange: #ea580c;
+    --red: #dc2626;
+    --green: #22c55e;
+    --green-dim: #166534;
+    --cyan: #06b6d4;
+    --cyan-dim: #0e7490;
+    --blue: #3b82f6;
+    --blue-dim: #1e3a5f;
+    --steel: #94a3b8;
+    --steel-dim: #475569;
+    --white: #e2e8f0;
+    --text-dim: #64748b;
+    --ds-color: #f59e0b;
+    --ns-color: #06b6d4;
+    --glow-gold: 0 0 20px rgba(232,184,75,0.3);
+    --glow-red: 0 0 20px rgba(220,38,38,0.4);
+    --glow-green: 0 0 15px rgba(34,197,94,0.3);
+    --glow-cyan: 0 0 15px rgba(6,182,212,0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--white);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    background-image: 
+      radial-gradient(ellipse at 20% 0%, rgba(59,130,246,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(232,184,75,0.05) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,48,80,0.3) 39px, rgba(30,48,80,0.3) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,48,80,0.15) 39px, rgba(30,48,80,0.15) 40px);
+  }
+
+  /* ─── LOADING OVERLAY ─── */
+  #loadingOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-deep);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    transition: opacity 0.5s ease;
+  }
+  #loadingOverlay.hidden { opacity: 0; pointer-events: none; }
+  .loader-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-shadow: var(--glow-gold);
+  }
+  .loader-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--steel-dim);
+    letter-spacing: 2px;
+  }
+  .loader-bar-track {
+    width: 280px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .loader-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    box-shadow: var(--glow-gold);
+  }
+  .loader-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--cyan);
+    letter-spacing: 1px;
+  }
+
+  /* ─── ERROR BANNER ─── */
+  #errorBanner {
+    display: none;
+    background: rgba(220,38,38,0.15);
+    border: 1px solid var(--red);
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin: 12px 20px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: #fca5a5;
+    letter-spacing: 1px;
+  }
+
+  /* ─── HEADER ─── */
+  .header {
+    background: linear-gradient(135deg, #0c1829 0%, #0f2040 50%, #0c1829 100%);
+    border-bottom: 2px solid var(--gold-dim);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.6), 0 1px 0 rgba(232,184,75,0.2);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .mine-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: var(--glow-gold);
+    flex-shrink: 0;
+  }
+  .header-titles { display: flex; flex-direction: column; }
+  .header-main {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 22px; font-weight: 700;
+    letter-spacing: 3px; color: var(--gold);
+    text-shadow: var(--glow-gold); line-height: 1;
+  }
+  .header-sub { font-size: 10px; letter-spacing: 2px; color: var(--steel-dim); text-transform: uppercase; margin-top: 3px; }
+  .header-right { display: flex; align-items: center; gap: 20px; }
+  .bcp-badge {
+    background: linear-gradient(135deg, rgba(220,38,38,0.2), rgba(220,38,38,0.1));
+    border: 1px solid var(--red);
+    border-radius: 4px; padding: 5px 12px;
+    font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; color: #fca5a5;
+    animation: pulse-red 2s ease-in-out infinite;
+  }
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 6px rgba(220,38,38,0.3); }
+    50% { box-shadow: 0 0 16px rgba(220,38,38,0.6); }
+  }
+  .live-clock { font-family: 'Share Tech Mono', monospace; font-size: 13px; color: var(--cyan); letter-spacing: 1px; }
+  .header-date { font-size: 11px; color: var(--steel-dim); letter-spacing: 1px; }
+
+  /* ─── REFRESH BUTTON ─── */
+  .refresh-btn {
+    background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.4);
+    border-radius: 4px; padding: 5px 12px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    color: var(--cyan); letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  .refresh-btn:hover { background: rgba(6,182,212,0.2); }
+  .refresh-btn.spinning { animation: spin 1s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  /* ─── LAYOUT ─── */
+  .dashboard { padding: 16px 20px 24px; max-width: 1600px; margin: 0 auto; display: grid; gap: 14px; }
+
+  /* ─── KPI ROW ─── */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px 18px; position: relative; overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .kpi-card.gold::before { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .kpi-card.cyan::before { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+  .kpi-card.orange::before { background: linear-gradient(90deg, transparent, var(--orange), transparent); }
+  .kpi-card.green::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+  .kpi-card:hover { transform: translateY(-2px); border-color: var(--border-bright); }
+  .kpi-icon-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .kpi-icon { width: 36px; height: 36px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .kpi-icon.gold { background: rgba(232,184,75,0.15); }
+  .kpi-icon.cyan { background: rgba(6,182,212,0.15); }
+  .kpi-icon.orange { background: rgba(234,88,12,0.15); }
+  .kpi-icon.green { background: rgba(34,197,94,0.15); }
+  .kpi-trend { font-family: 'Share Tech Mono', monospace; font-size: 10px; padding: 2px 6px; border-radius: 3px; }
+  .trend-up { background: rgba(34,197,94,0.15); color: var(--green); }
+  .trend-down { background: rgba(220,38,38,0.15); color: #f87171; }
+  .trend-flat { background: rgba(100,116,139,0.15); color: var(--steel-dim); }
+  .kpi-value { font-family: 'Rajdhani', sans-serif; font-size: 36px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .kpi-value.gold { color: var(--gold); text-shadow: var(--glow-gold); }
+  .kpi-value.cyan { color: var(--cyan); text-shadow: var(--glow-cyan); }
+  .kpi-value.orange { color: var(--orange); }
+  .kpi-value.green { color: var(--green); text-shadow: var(--glow-green); }
+  .kpi-unit { font-size: 12px; color: var(--steel-dim); margin-left: 3px; font-weight: 400; }
+  .kpi-label { font-size: 10px; letter-spacing: 1.5px; color: var(--steel-dim); text-transform: uppercase; }
+
+  /* ─── MIDDLE ROW ─── */
+  .middle-row { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 14px; }
+
+  /* ─── PANELS ─── */
+  .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .panel-header {
+    background: linear-gradient(90deg, #0f1e38, #0c1829);
+    border-bottom: 1px solid var(--border); padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-title { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px; color: var(--steel); text-transform: uppercase; }
+  .panel-title .accent { color: var(--gold); }
+  .panel-tag { font-family: 'Share Tech Mono', monospace; font-size: 9px; padding: 2px 8px; border-radius: 2px; letter-spacing: 1px; background: rgba(30,48,80,0.8); color: var(--steel-dim); border: 1px solid var(--border); }
+  .panel-body { padding: 14px 16px; }
+
+  /* ─── PROCESS FLOW ─── */
+  .flow-timeline { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; position: relative; }
+  .flow-step:not(:last-child)::after {
+    content: ''; position: absolute; left: 15px; top: 36px; bottom: -10px;
+    width: 2px; background: linear-gradient(180deg, var(--border-bright), transparent);
+  }
+  .flow-dot-wrap { width: 32px; height: 32px; flex-shrink: 0; position: relative; }
+  .flow-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; border: 2px solid; position: relative; z-index: 1; }
+  .flow-dot.s1 { background: rgba(232,184,75,0.15); border-color: var(--gold); color: var(--gold); }
+  .flow-dot.s2 { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue); }
+  .flow-dot.s3 { background: rgba(6,182,212,0.15); border-color: var(--cyan); color: var(--cyan); }
+  .flow-dot.s4 { background: rgba(234,88,12,0.15); border-color: var(--orange); color: var(--orange); }
+  .flow-dot.s5 { background: rgba(34,197,94,0.15); border-color: var(--green); color: var(--green); }
+  .flow-info { flex: 1; padding-top: 4px; }
+  .flow-step-name { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: var(--white); letter-spacing: 0.5px; }
+  .flow-step-time { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--steel-dim); margin-top: 2px; }
+  .flow-step-detail { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .flow-duration { text-align: right; padding-top: 4px; }
+  .flow-dur-val { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--cyan); }
+  .flow-dur-label { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+
+  /* ─── SHIFT COMPARISON ─── */
+  .shift-compare { display: flex; flex-direction: column; gap: 12px; }
+  .shift-header-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .shift-badge { border-radius: 6px; padding: 8px 12px; text-align: center; }
+  .shift-badge.ds { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.4); }
+  .shift-badge.ns { background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.4); }
+  .shift-badge-label { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; }
+  .shift-badge.ds .shift-badge-label { color: var(--ds-color); }
+  .shift-badge.ns .shift-badge-label { color: var(--ns-color); }
+  .shift-badge-sub { font-size: 9px; color: var(--steel-dim); letter-spacing: 1px; text-transform: uppercase; }
+  .metric-bar-group { display: flex; flex-direction: column; gap: 8px; }
+  .metric-bar-item { display: flex; flex-direction: column; gap: 4px; }
+  .metric-bar-labels { display: flex; justify-content: space-between; align-items: center; }
+  .metric-bar-name { font-size: 10px; color: var(--steel-dim); letter-spacing: 1px; text-transform: uppercase; }
+  .metric-bar-values { display: flex; gap: 8px; font-family: 'Share Tech Mono', monospace; font-size: 11px; }
+  .metric-bar-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+  .metric-bar-fill.ds { background: linear-gradient(90deg, var(--gold-dim), var(--ds-color)); }
+  .metric-bar-fill.ns { background: linear-gradient(90deg, var(--cyan-dim), var(--ns-color)); }
+  .compliance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .comp-cell { border-radius: 6px; padding: 8px 10px; text-align: center; border: 1px solid var(--border); }
+  .comp-cell .comp-val { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; }
+  .comp-cell .comp-pct { font-size: 11px; color: var(--steel-dim); }
+
+  /* ─── CHART ─── */
+  .chart-container { position: relative; width: 100%; }
+  canvas { width: 100% !important; }
+
+  /* ─── BOTTOM ROW ─── */
+  .bottom-row { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+
+  /* ─── INCIDENT PANEL ─── */
+  .incident-list { display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; }
+  .incident-list::-webkit-scrollbar { width: 4px; }
+  .incident-list::-webkit-scrollbar-track { background: transparent; }
+  .incident-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .incident-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 6px; border: 1px solid; background: rgba(10,14,20,0.5); position: relative; overflow: hidden; }
+  .incident-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+  .incident-item.critical { border-color: rgba(220,38,38,0.4); }
+  .incident-item.critical::before { background: var(--red); box-shadow: var(--glow-red); }
+  .incident-item.warning { border-color: rgba(234,88,12,0.4); }
+  .incident-item.warning::before { background: var(--orange); }
+  .incident-item.info { border-color: rgba(30,48,80,0.8); }
+  .incident-item.info::before { background: var(--steel-dim); }
+  .incident-icon { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+  .incident-content { flex: 1; }
+  .incident-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+  .incident-type { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .incident-item.critical .incident-type { color: #f87171; }
+  .incident-item.warning .incident-type { color: #fb923c; }
+  .incident-item.info .incident-type { color: var(--steel-dim); }
+  .incident-meta { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--text-dim); }
+  .incident-desc { font-size: 11px; color: var(--steel); line-height: 1.4; }
+
+  /* ─── STATUS PANEL ─── */
+  .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .status-item { border-radius: 6px; padding: 10px; border: 1px solid var(--border); text-align: center; }
+  .status-item .status-count { font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; line-height: 1; }
+  .status-item .status-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-top: 3px; }
+  .status-item.complete { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.3); }
+  .status-item.complete .status-count { color: var(--green); }
+  .status-item.transit { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); }
+  .status-item.transit .status-count { color: var(--amber); }
+  .status-item.noncompliant { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.3); }
+  .status-item.noncompliant .status-count { color: #f87171; }
+  .status-item.total { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.3); }
+  .status-item.total .status-count { color: var(--blue); }
+
+  .mini-donut { margin: 12px auto 0; position: relative; width: 100px; height: 100px; }
+  .mini-donut canvas { position: absolute; top: 0; left: 0; }
+  .mini-donut-label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+  .mini-donut-pct { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; color: var(--green); line-height: 1; }
+  .mini-donut-sub { font-size: 9px; color: var(--text-dim); letter-spacing: 1px; }
+
+  /* ─── FOOTER BAR ─── */
+  .footer-bar {
+    background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 16px; display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 1px;
+  }
+  .footer-dots { display: flex; gap: 6px; align-items: center; }
+  .fdot { width: 6px; height: 6px; border-radius: 50%; }
+  .fdot.green { background: var(--green); box-shadow: var(--glow-green); animation: blink 1.5s ease-in-out infinite; }
+  .fdot.gold { background: var(--gold); }
+  .fdot.red { background: var(--red); }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ─── Utility ─── */
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .divider { height: 1px; background: var(--border); margin: 10px 0; }
+  .section-tag { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; padding-left: 2px; }
+
+  /* Skeleton shimmer for loading state */
+  .skeleton {
+    background: linear-gradient(90deg, var(--border) 25%, var(--border-bright) 50%, var(--border) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+    color: transparent !important;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+</head>
+<body>
+
+<!-- ─── LOADING OVERLAY ─── -->
+<div id="loadingOverlay">
+  <div class="loader-title">⛏ BCP SAMPLE TRACKER</div>
+  <div class="loader-sub">CONNECTING TO GOOGLE SHEETS DATA SOURCE</div>
+  <div class="loader-bar-track">
+    <div class="loader-bar-fill" id="loaderBar"></div>
+  </div>
+  <div class="loader-status" id="loaderStatus">INITIALISING...</div>
+</div>
+
+<!-- ─── HEADER ─── -->
+<div class="header">
+  <div class="header-left">
+    <div class="mine-icon">⛏</div>
+    <div class="header-titles">
+      <div class="header-main">AHAFO SOUTH BCP SAMPLE TRACKER</div>
+      <div class="header-sub">Newmont Mining · Laboratory Sample Dispatch Monitoring · Tarkwa BCP Route</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div style="text-align:right">
+      <div class="live-clock" id="liveClock">--:--:--</div>
+      <div class="header-date" id="liveDate">-- --- 2026</div>
+    </div>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData(true)" title="Refresh data from Google Sheets">↻ REFRESH</button>
+    <div class="bcp-badge">🔴 BCP ACTIVE</div>
+  </div>
+</div>
+
+<div id="errorBanner">⚠ DATA LOAD ERROR — Displaying last known values. Check network connection or Google Sheets web app URL.</div>
+
+<!-- ─── DASHBOARD ─── -->
+<div class="dashboard">
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi-card gold">
+      <div class="kpi-icon-row">
+        <div class="kpi-icon gold">⏱</div>
+        <span class="kpi-trend trend-flat" id="kpiAvgTransitTrend">→ STABLE</span>
+      </div>
+      <div class="kpi-value gold" id="kpiAvgTransit">—<span class="kpi-unit">hrs</span></div>
+      <div class="kpi-label">Avg Transit Time</div>
+    </div>
+    <div class="kpi-card cyan">
+      <div class="kpi-icon-row">
+        <div class="kpi-icon cyan">🔄</div>
+        <span class="kpi-trend trend-flat" id="kpiTurnaroundTrend">→ STABLE</span>
+      </div>
+      <div class="kpi-value cyan" id="kpiTurnaround">—<span class="kpi-unit">hrs</span></div>
+      <div class="kpi-label">Total Turnaround</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-icon-row">
+        <div class="kpi-icon orange">⚠</div>
+        <span class="kpi-trend trend-down" id="kpiIncidentsTrend">↑ FLAG</span>
+      </div>
+      <div class="kpi-value orange" id="kpiIncidents">—</div>
+      <div class="kpi-label">Late / Incident Dispatches</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon-row">
+        <div class="kpi-icon green">📦</div>
+        <span class="kpi-trend trend-up">✓ ON TRACK</span>
+      </div>
+      <div class="kpi-value green" id="kpiTotal">—</div>
+      <div class="kpi-label">Total Dispatches</div>
+    </div>
+  </div>
+
+  <!-- MIDDLE ROW -->
+  <div class="middle-row">
+
+    <!-- PROCESS FLOW TIMELINE (static — it's operational procedure, not data-driven) -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="accent">◆</span> SAMPLE DISPATCH PROCESS FLOW</div>
+        <div class="panel-tag">AHAFO SITE → TARKWA LAB</div>
+      </div>
+      <div class="panel-body">
+        <div class="section-tag">Expected Schedule / Typical Event Sequence</div>
+        <div class="flow-timeline">
+          <div class="flow-step">
+            <div class="flow-dot-wrap"><div class="flow-dot s1">🧪</div></div>
+            <div class="flow-info">
+              <div class="flow-step-name">Process Plant Sample Arrival</div>
+              <div class="flow-step-time">Target: 3:00 AM/PM</div>
+              <div class="flow-step-detail">Samples received from process plant & GC stations at on-site lab</div>
+            </div>
+            <div class="flow-duration"><div class="flow-dur-val">~T+0</div><div class="flow-dur-label">BASELINE</div></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-dot-wrap"><div class="flow-dot s2">📋</div></div>
+            <div class="flow-info">
+              <div class="flow-step-name">GC Sample Last Arrival</div>
+              <div class="flow-step-time">Target: 3:00 AM/PM</div>
+              <div class="flow-step-detail">All gravity concentrate & final samples confirmed received</div>
+            </div>
+            <div class="flow-duration"><div class="flow-dur-val">~3:00</div><div class="flow-dur-label">AM/PM</div></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-dot-wrap"><div class="flow-dot s3">🚐</div></div>
+            <div class="flow-info">
+              <div class="flow-step-name">Loading into Dispatch Vehicle</div>
+              <div class="flow-step-time">Target: 3:30–3:40 AM/PM</div>
+              <div class="flow-step-detail">Samples loaded under security officer supervision; manifest signed</div>
+            </div>
+            <div class="flow-duration"><div class="flow-dur-val">+30m</div><div class="flow-dur-label">LOAD</div></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-dot-wrap"><div class="flow-dot s4">🚦</div></div>
+            <div class="flow-info">
+              <div class="flow-step-name">Depart Boom Gate</div>
+              <div class="flow-step-time">Target: 4:00 AM/PM</div>
+              <div class="flow-step-detail">Vehicle cleared through site security; route activated to Tarkwa</div>
+            </div>
+            <div class="flow-duration"><div class="flow-dur-val">+60m</div><div class="flow-dur-label">DEPART</div></div>
+          </div>
+          <div class="flow-step">
+            <div class="flow-dot-wrap"><div class="flow-dot s5">🏭</div></div>
+            <div class="flow-info">
+              <div class="flow-step-name">Arrival at Tarkwa BCP Laboratory</div>
+              <div class="flow-step-time" id="flowArrivalTime">Expected: ~10:30 AM/PM</div>
+              <div class="flow-step-detail">Samples received, logged & assay processing begins at Tarkwa lab</div>
+            </div>
+            <div class="flow-duration"><div class="flow-dur-val" id="flowTransitVal">~6.8h</div><div class="flow-dur-label">TRANSIT</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DS vs NS SHIFT COMPARISON -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="accent">◆</span> SHIFT PERFORMANCE</div>
+        <div class="panel-tag">DS vs NS</div>
+      </div>
+      <div class="panel-body">
+        <div class="shift-header-row">
+          <div class="shift-badge ds">
+            <div class="shift-badge-label">D/S ☀</div>
+            <div class="shift-badge-sub" id="dsRunsLabel">Day Shift · — Runs</div>
+          </div>
+          <div class="shift-badge ns">
+            <div class="shift-badge-label">N/S 🌙</div>
+            <div class="shift-badge-sub" id="nsRunsLabel">Night Shift · — Runs</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-tag">Transit Time (hrs)</div>
+        <div class="metric-bar-group">
+          <div class="metric-bar-item">
+            <div class="metric-bar-labels">
+              <div class="metric-bar-name">Avg Transit</div>
+              <div class="metric-bar-values">
+                <span style="color:var(--ds-color)" id="dsAvgTransit">—h</span>
+                <span style="color:var(--text-dim)">vs</span>
+                <span style="color:var(--ns-color)" id="nsAvgTransit">—h</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;">
+              <div style="height:6px;background:rgba(30,48,80,0.6);border-radius:3px;overflow:hidden;">
+                <div class="metric-bar-fill ds" id="dsTransitBar" style="width:0%;height:100%"></div>
+              </div>
+              <div style="height:6px;background:rgba(30,48,80,0.6);border-radius:3px;overflow:hidden;">
+                <div class="metric-bar-fill ns" id="nsTransitBar" style="width:0%;height:100%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="metric-bar-item">
+            <div class="metric-bar-labels">
+              <div class="metric-bar-name">Dispatches</div>
+              <div class="metric-bar-values">
+                <span style="color:var(--ds-color)" id="dsDispatches">—</span>
+                <span style="color:var(--text-dim)">vs</span>
+                <span style="color:var(--ns-color)" id="nsDispatches">—</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;">
+              <div style="height:6px;background:rgba(30,48,80,0.6);border-radius:3px;overflow:hidden;">
+                <div class="metric-bar-fill ds" id="dsDispatchBar" style="width:100%;height:100%"></div>
+              </div>
+              <div style="height:6px;background:rgba(30,48,80,0.6);border-radius:3px;overflow:hidden;">
+                <div class="metric-bar-fill ns" id="nsDispatchBar" style="width:100%;height:100%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="metric-bar-item">
+            <div class="metric-bar-labels">
+              <div class="metric-bar-name">Missing Arrivals</div>
+              <div class="metric-bar-values">
+                <span style="color:var(--ds-color)" id="dsMissing">—</span>
+                <span style="color:var(--text-dim)">vs</span>
+                <span style="color:var(--ns-color)" id="nsMissing">—</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px;">
+              <div style="height:6px;background:rgba(30,48,80,0.6);border-radius:3px;overflow:hidden;">
+                <div class="metric-bar-fill ds" id="dsMissingBar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--orange),var(--red))"></div>
+              </div>
+              <div style="height:6px;background:rgba(30,48,80,0.6);border-radius:3px;overflow:hidden;">
+                <div class="metric-bar-fill ns" id="nsMissingBar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--orange),var(--red))"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-tag">Compliance Rate</div>
+        <div class="compliance-grid">
+          <div class="comp-cell" style="border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.06);">
+            <div class="comp-val" style="color:var(--ds-color)" id="dsCompliance">—/—</div>
+            <div class="comp-pct" id="dsCompliancePct">D/S · —%</div>
+          </div>
+          <div class="comp-cell" style="border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.06);">
+            <div class="comp-val" style="color:var(--ns-color)" id="nsCompliance">—/—</div>
+            <div class="comp-pct" id="nsCompliancePct">N/S · —%</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:10px">
+          <div class="mini-donut" style="margin:0 auto">
+            <canvas id="donutChart" width="100" height="100"></canvas>
+            <div class="mini-donut-label">
+              <div class="mini-donut-pct" id="donutPct">—%</div>
+              <div class="mini-donut-sub">OVERALL</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRANSIT TIME TREND CHART -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="accent">◆</span> TRANSIT TIME TREND</div>
+        <div class="panel-tag" id="chartDateRange">LOADING...</div>
+      </div>
+      <div class="panel-body">
+        <div class="section-tag">Daily avg transit (hrs) · D/S vs N/S · Target ≤7.5h</div>
+        <div class="chart-container" style="height:260px">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row">
+
+    <!-- INCIDENT PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="accent">◆</span> INCIDENT & EXCEPTION ALERT PANEL</div>
+        <div class="panel-tag" id="incidentCount">— EVENTS LOGGED</div>
+      </div>
+      <div class="panel-body">
+        <div class="incident-list" id="incidentList">
+          <!-- dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+    <!-- STATUS SUMMARY -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><span class="accent">◆</span> OPERATIONAL STATUS</div>
+        <div class="panel-tag">SUMMARY</div>
+      </div>
+      <div class="panel-body">
+        <div class="section-tag">Dispatch Status Breakdown</div>
+        <div class="status-grid">
+          <div class="status-item complete">
+            <div class="status-count" id="statusComplete">—</div>
+            <div class="status-label">Complete</div>
+          </div>
+          <div class="status-item transit">
+            <div class="status-count" id="statusTransit">—</div>
+            <div class="status-label">In Transit / Missing</div>
+          </div>
+          <div class="status-item noncompliant">
+            <div class="status-count" id="statusNonCompliant">—</div>
+            <div class="status-label">Non-Compliant</div>
+          </div>
+          <div class="status-item total">
+            <div class="status-count" id="statusTotal">—</div>
+            <div class="status-label">Total Runs</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-tag">Overall Compliance Rate</div>
+        <div style="text-align:center">
+          <div class="mini-donut" style="width:120px;height:120px;margin:8px auto 0">
+            <canvas id="complianceDonut" width="120" height="120"></canvas>
+            <div class="mini-donut-label">
+              <div class="mini-donut-pct" style="font-size:26px" id="compliancePct">—%</div>
+              <div class="mini-donut-sub">COMPLIANT</div>
+            </div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-tag">BCP Driver Roster</div>
+        <div id="driverRoster" style="display:flex;flex-direction:column;gap:5px">
+          <!-- dynamically populated -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer-bar">
+    <div class="footer-dots">
+      <div class="fdot green"></div>
+      <span>SYSTEM ONLINE</span>
+      <span style="margin-left:12px">|</span>
+      <div class="fdot gold" style="margin-left:12px"></div>
+      <span>BCP ACTIVE</span>
+      <div class="fdot red" style="margin-left:12px"></div>
+      <span>LAB FIRE · PENDING REINSTATEMENT</span>
+    </div>
+    <div id="footerDataRange">DATA RANGE: LOADING... · AHAFO SOUTH MINE SITE → TARKWA EXTERNAL LABORATORY</div>
+    <div>AHAFO SOUTH MINE · NEWMONT CORPORATION · BCP SAMPLE TRACKING MODULE v2.1 DYNAMIC</div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwPAygAqcLImSUqBWB0a02rF7DgkcqTuhJTc1HH_3PTveP-a9z5L0pFuPJ8jJYRyh-5fg/exec';
+const TARGET_TRANSIT_HRS = 7.5;
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // auto-refresh every 5 minutes
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let trendChartInstance = null;
+let lastData = null;
+
+// ─── CLOCK ────────────────────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-GB');
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  document.getElementById('liveDate').textContent = `${days[now.getDay()]} · ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ─── LOADER HELPERS ───────────────────────────────────────────────────────────
+function setLoader(pct, msg) {
+  document.getElementById('loaderBar').style.width = pct + '%';
+  document.getElementById('loaderStatus').textContent = msg;
+}
+
+function hideLoader() {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.add('hidden');
+  setTimeout(() => overlay.style.display = 'none', 500);
+}
+
+// ─── FETCH DATA ───────────────────────────────────────────────────────────────
+async function loadData(isRefresh = false) {
+  const btn = document.getElementById('refreshBtn');
+  if (isRefresh) btn.textContent = '↻ SYNCING...';
+
+  try {
+    setLoader(20, 'CONNECTING TO GOOGLE SHEETS...');
+    const response = await fetch(SHEETS_URL);
+    setLoader(60, 'PARSING DATA...');
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    setLoader(90, 'RENDERING DASHBOARD...');
+
+    lastData = data;
+    renderDashboard(data);
+    document.getElementById('errorBanner').style.display = 'none';
+    setLoader(100, 'COMPLETE');
+
+    setTimeout(() => { if (!isRefresh) hideLoader(); }, 300);
+  } catch (err) {
+    console.error('Data load error:', err);
+    document.getElementById('errorBanner').style.display = 'block';
+    setLoader(100, 'ERROR — CHECK CONSOLE');
+    if (!isRefresh) {
+      // Still hide loader but show error
+      setTimeout(hideLoader, 800);
+    }
+  } finally {
+    if (isRefresh) btn.textContent = '↻ REFRESH';
+  }
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderDashboard(data) {
+  // data shape expected from Google Sheets web app:
+  // {
+  //   summary: { avgTransitHrs, turnaroundHrs, totalDispatches, incidentCount,
+  //              complete, inTransitMissing, nonCompliant,
+  //              dsRuns, nsRuns, dsAvgTransit, nsAvgTransit,
+  //              dsMissing, nsMissing, dsCompliant, nsCompliant,
+  //              overallCompliancePct, dateRangeLabel },
+  //   trend: [ { date, dsTransit, nsTransit } ... ],       // nulls allowed
+  //   incidents: [ { severity, type, meta, desc } ... ],   // severity: critical|warning|info
+  //   drivers: [ { name, runs } ... ]
+  // }
+
+  const s = data.summary || {};
+  const trend = data.trend || [];
+  const incidents = data.incidents || [];
+  const drivers = data.drivers || [];
+
+  // ── KPIs ──
+  setText('kpiAvgTransit', s.avgTransitHrs != null ? s.avgTransitHrs.toFixed(2) + '<span class="kpi-unit">hrs</span>' : '—');
+  setText('kpiTurnaround', s.turnaroundHrs != null ? s.turnaroundHrs.toFixed(2) + '<span class="kpi-unit">hrs</span>' : '—');
+  setText('kpiIncidents', s.incidentCount != null ? s.incidentCount : '—');
+  setText('kpiTotal', s.totalDispatches != null ? s.totalDispatches : '—');
+
+  // ── Status summary ──
+  setText('statusComplete', s.complete ?? '—');
+  setText('statusTransit', s.inTransitMissing ?? '—');
+  setText('statusNonCompliant', s.nonCompliant ?? '—');
+  setText('statusTotal', s.totalDispatches ?? '—');
+
+  // ── Compliance ──
+  const compPct = s.overallCompliancePct != null ? s.overallCompliancePct : null;
+  setText('compliancePct', compPct != null ? compPct.toFixed(1) + '%' : '—%');
+
+  // ── Shift comparison ──
+  const dsRuns = s.dsRuns ?? 0;
+  const nsRuns = s.nsRuns ?? 0;
+  const maxRuns = Math.max(dsRuns, nsRuns, 1);
+  const dsAvg = s.dsAvgTransit ?? 0;
+  const nsAvg = s.nsAvgTransit ?? 0;
+  const maxAvg = Math.max(dsAvg, nsAvg, TARGET_TRANSIT_HRS);
+  const dsMiss = s.dsMissing ?? 0;
+  const nsMiss = s.nsMissing ?? 0;
+  const maxMiss = Math.max(dsMiss, nsMiss, 1);
+  const dsCompliant = s.dsCompliant ?? 0;
+  const nsCompliant = s.nsCompliant ?? 0;
+  const dsCompPct = dsRuns > 0 ? ((dsCompliant/dsRuns)*100).toFixed(1) : '—';
+  const nsCompPct = nsRuns > 0 ? ((nsCompliant/nsRuns)*100).toFixed(1) : '—';
+
+  setText('dsRunsLabel', `Day Shift · ${dsRuns} Runs`);
+  setText('nsRunsLabel', `Night Shift · ${nsRuns} Runs`);
+  setText('dsAvgTransit', dsAvg ? dsAvg.toFixed(2) + 'h' : '—h');
+  setText('nsAvgTransit', nsAvg ? nsAvg.toFixed(2) + 'h' : '—h');
+  setText('dsDispatches', dsRuns);
+  setText('nsDispatches', nsRuns);
+  setText('dsMissing', dsMiss);
+  setText('nsMissing', nsMiss);
+  setText('dsCompliance', `${dsCompliant}/${dsRuns}`);
+  setText('nsCompliance', `${nsCompliant}/${nsRuns}`);
+  setText('dsCompliancePct', `D/S · ${dsCompPct}%`);
+  setText('nsCompliancePct', `N/S · ${nsCompPct}%`);
+  setText('donutPct', compPct != null ? compPct.toFixed(1) + '%' : '—%');
+
+  setStyle('dsTransitBar', 'width', pct(dsAvg, maxAvg) + '%');
+  setStyle('nsTransitBar', 'width', pct(nsAvg, maxAvg) + '%');
+  setStyle('dsDispatchBar', 'width', pct(dsRuns, maxRuns) + '%');
+  setStyle('nsDispatchBar', 'width', pct(nsRuns, maxRuns) + '%');
+  setStyle('dsMissingBar', 'width', pct(dsMiss, maxMiss) + '%');
+  setStyle('nsMissingBar', 'width', pct(nsMiss, maxMiss) + '%');
+
+  // ── Flow panel dynamic values ──
+  const avgT = s.avgTransitHrs;
+  if (avgT) {
+    setText('flowTransitVal', '~' + avgT.toFixed(1) + 'h');
+    setText('flowArrivalTime', `Expected: ~10:30 AM/PM (avg ${avgT.toFixed(1)}h transit)`);
+  }
+
+  // ── Date range ──
+  if (s.dateRangeLabel) {
+    setText('chartDateRange', s.dateRangeLabel);
+    setText('footerDataRange', `DATA RANGE: ${s.dateRangeLabel} · AHAFO SOUTH MINE SITE → TARKWA EXTERNAL LABORATORY · ${s.totalDispatches || '—'} DISPATCH RECORDS`);
+  }
+
+  // ── Donuts ──
+  drawDonut('donutChart', compPct ?? 0, '#22c55e', 'rgba(30,48,80,0.6)', 100);
+  drawDonut('complianceDonut', compPct ?? 0, '#22c55e', 'rgba(30,48,80,0.6)', 120);
+
+  // ── Trend chart ──
+  renderTrendChart(trend);
+
+  // ── Incidents ──
+  renderIncidents(incidents);
+
+  // ── Drivers ──
+  renderDrivers(drivers);
+}
+
+// ─── TREND CHART ──────────────────────────────────────────────────────────────
+function renderTrendChart(trend) {
+  Chart.defaults.color = '#64748b';
+  Chart.defaults.font.family = "'Share Tech Mono', monospace";
+  Chart.defaults.font.size = 10;
+
+  const labels = trend.map(r => r.date);
+  const dsData = trend.map(r => r.dsTransit != null ? r.dsTransit : null);
+  const nsData = trend.map(r => r.nsTransit != null ? r.nsTransit : null);
+
+  const ctx = document.getElementById('trendChart').getContext('2d');
+
+  if (trendChartInstance) trendChartInstance.destroy();
+
+  trendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'D/S Transit (hrs)',
+          data: dsData,
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.08)',
+          pointBackgroundColor: '#f59e0b',
+          pointBorderColor: '#0a0e14',
+          pointRadius: 4, pointHoverRadius: 7,
+          borderWidth: 2, tension: 0.4, fill: false, spanGaps: false,
+        },
+        {
+          label: 'N/S Transit (hrs)',
+          data: nsData,
+          borderColor: '#06b6d4',
+          backgroundColor: 'rgba(6,182,212,0.08)',
+          pointBackgroundColor: '#06b6d4',
+          pointBorderColor: '#0a0e14',
+          pointRadius: 4, pointHoverRadius: 7,
+          borderWidth: 2, tension: 0.4, fill: false, spanGaps: false,
+        },
+        {
+          label: `Target Max (${TARGET_TRANSIT_HRS}h)`,
+          data: Array(labels.length).fill(TARGET_TRANSIT_HRS),
+          borderColor: 'rgba(220,38,38,0.5)',
+          borderDash: [6, 4], borderWidth: 1.5, pointRadius: 0, fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 }, boxWidth: 20, padding: 12 } },
+        tooltip: {
+          backgroundColor: 'rgba(15,21,32,0.95)', borderColor: '#1e3050', borderWidth: 1,
+          titleColor: '#e2e8f0', bodyColor: '#94a3b8', padding: 10,
+          callbacks: { label: ctx => ctx.raw === null ? ctx.dataset.label + ': —' : ctx.dataset.label + ': ' + ctx.raw.toFixed(2) + 'h' }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(30,48,80,0.5)' }, ticks: { color: '#475569', maxRotation: 45, font: { size: 9 } }, border: { color: '#1e3050' } },
+        y: { min: 5, max: 9, grid: { color: 'rgba(30,48,80,0.5)' }, ticks: { color: '#475569', font: { size: 9 }, callback: v => v.toFixed(1) + 'h' }, border: { color: '#1e3050' } }
+      }
+    }
+  });
+}
+
+// ─── INCIDENTS ────────────────────────────────────────────────────────────────
+function renderIncidents(incidents) {
+  const list = document.getElementById('incidentList');
+  setText('incidentCount', incidents.length + ' EVENTS LOGGED');
+
+  if (!incidents.length) {
+    list.innerHTML = '<div style="padding:12px;text-align:center;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--text-dim)">NO INCIDENTS LOGGED</div>';
+    return;
+  }
+
+  const severityIcon = { critical: '🔴', warning: '🟠', info: '🔵' };
+  list.innerHTML = incidents.map(inc => `
+    <div class="incident-item ${inc.severity || 'info'}">
+      <div class="incident-icon">${severityIcon[inc.severity] || '🔵'}</div>
+      <div class="incident-content">
+        <div class="incident-header">
+          <div class="incident-type">${escHtml(inc.type || '')}</div>
+          <div class="incident-meta">${escHtml(inc.meta || '')}</div>
+        </div>
+        <div class="incident-desc">${escHtml(inc.desc || '')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── DRIVERS ──────────────────────────────────────────────────────────────────
+function renderDrivers(drivers) {
+  const roster = document.getElementById('driverRoster');
+  if (!drivers.length) { roster.innerHTML = '<div style="font-size:11px;color:var(--text-dim)">No driver data</div>'; return; }
+  roster.innerHTML = drivers.map(d => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:rgba(30,48,80,0.3);border-radius:4px;border:1px solid var(--border)">
+      <span style="font-size:11px;color:var(--white)">🚐 ${escHtml(d.name)}</span>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--steel-dim)">${d.runs} runs</span>
+    </div>
+  `).join('');
+}
+
+// ─── DONUT ────────────────────────────────────────────────────────────────────
+function drawDonut(canvasId, pct, color, bg, size) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = size || 100;
+  const cx = w/2, cy = w/2, r = w*0.38, lw = w*0.12;
+  ctx.clearRect(0,0,w,w);
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.strokeStyle=bg||'rgba(30,48,80,0.6)'; ctx.lineWidth=lw; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+(pct/100)*Math.PI*2);
+  ctx.strokeStyle=color; ctx.lineWidth=lw; ctx.lineCap='round';
+  ctx.shadowColor=color; ctx.shadowBlur=8; ctx.stroke();
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function setText(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+function setStyle(id, prop, val) {
+  const el = document.getElementById(id);
+  if (el) el.style[prop] = val;
+}
+function pct(val, max) { return max > 0 ? Math.min(100, Math.round((val/max)*100)) : 0; }
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+loadData();
+setInterval(() => loadData(true), REFRESH_INTERVAL_MS);
+</script>
+</body>
+</html>
